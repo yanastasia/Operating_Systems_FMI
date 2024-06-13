@@ -1,0 +1,3 @@
+2ab7621dc26836f9bff34057140650f4  test/b
+a2ec7bfcf90568575e5f9ac94b60ada5  test/c
+f50b56a2d6d02c9bf81ea521da4bf841  test/a
