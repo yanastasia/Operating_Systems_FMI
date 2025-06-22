@@ -1,0 +1,126 @@
+Задача 84. 
+int main(int argc, char* argv[]) {
+	
+	if ( argc != 2 ) {
+		errx(1, "Incorrect number of arguments given");
+	}
+	
+	int fifo_status = mkfifo("/tmp/krasi_fifo", S_IRUSR | S_IWUSR);
+	if ( fifo_status == -1) {
+		err(2, "Could not create FIFO");
+	}
+
+	int fd = open("/tmp/krasi_fifo", O_WRONLY); -> забиваше защото беше RDWR, изяждахме всичко в тръбата  
+	if (fd == -1) {
+		err(4, "Open failed");
+	}
+
+	dup2(fd,1); -> искаме детето да кат-не файла и да изплюе съдържанието в фифо-то 
+
+	if ( execl("/bin/cat", "/bin/cat", argv[1], (char *)NULL) == -1 ) {
+		err(5, "Exec failed");
+	}
+	exit(0);
+}
+
+int main(int argc, char* argv[]) {
+	
+	if ( argc != 2 ) {
+		errx(1, "Incorrect number of arguments given");
+	}
+
+	int fd = open("/tmp/krasi_fifo", O_RDONLY);
+	if ( fd == -1 ) {
+		err(2, "Could not open file");
+	}
+
+	dup2(fd,0);
+	if ( execl(argv[1], argv[1], (char *)NULL) == -1 ) {
+		err(3, "Exec failed");
+	}
+}
+
+-> с unlink трием файла
+
+Задача 85. 
+byte XOR byte2 = byte3
+byte3 XOR byte2 = byte
+
+0xAB 0x1C ox55
+0xAB 0x1C 0x7D (0x55 XOR 0x20)
+
+while (read(byte)){
+	if ( byte != 0x7D ){
+		print(byte);
+	}
+	
+	if ( byte == 0x7D ){
+		read(byte2);
+		print( byte2 XOR 0x20);
+	}
+}
+
+int main(int argc, char* argv[]) {
+	
+	if ( argc != 3 ) {
+		errx(1, "Incorrect number of arguments given");
+	}
+	
+	//P1: cat argv[1] 
+	//read ^
+	
+	//fork, execl, pipe
+
+	int arr[2];
+	if ( pipe(arr) == -1 ) {
+		err(2, "Pipe failed");
+	}
+
+	int pid = fork();
+
+	if ( pid == 0 ) {
+		close(arr[0]);
+		close(1);
+		dup2(arr[1],1);
+		
+		if ( execl("/bin/cat", "/bin/cat", argv[1], (char *)NULL) == -1 ) {
+			err(1, "Exec failed");
+		}
+	}
+
+	close(arr[1]);
+	int fd = open(argv[2], O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);
+	if ( fd == -1 ) {
+		err(4, "Could not open file");
+	}
+
+	unsigned char byte;
+	int read_status;
+
+	while( (read status = read(arr[0], &byte, 1)) > 0 ) {
+		if ( byte == 0x7D ) {
+			if ( read(arr[0], &byte, 1) != 1 ) {
+				close(fd);
+				close(arr[0]);
+				err(6, "File format incorrect!");
+			} 
+			byte = byte ^ 0x20;
+		} 
+
+		if ( write(fd, &byte, 1) != 1) {
+			close(fd);
+			close(arr[0]);
+			err(5, "Write failed");
+		}
+	}
+
+	if ( read_status == -1 ) {
+		close(fd);
+		close(arr[0]);
+		err (3, "Read failed");
+	}
+
+	close(fd);
+	close(arr[0]);
+	exit(0);
+}
